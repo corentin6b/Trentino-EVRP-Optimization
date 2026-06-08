@@ -1,0 +1,96 @@
+Nome;Latitudine;Longitudine;Altitudine;Tipo;Domanda_kg
+Lavanderia Industriale Moderna - La Moderna di Piz Fabrizio;46.4383;11.136;985;hub;0
+Hotel Lady Maria;46.438;11.1368;987;client;190
+Blumen Hotel Bel Soggiorno;46.437;11.1465;1041;client;110
+Hotel Panorama Wellness & Resort;46.4388;11.1493;1041;client;170
+Hotel Rosa Resort;46.4117;11.1421;976;client;210
+Pineta Nature Resort;46.349;11.094;831;client;230
+Miraval Hotel;46.342;11.0945;831;client;130
+Hotel Rifugio Sores;46.3516;11.109;1200;client;95
+Hotel Cavallino Bianco;46.442;11.016;944;client;95
+Hotel Al Larice;46.42;11.152;1080;client;80
+Agriturismo Golden Pause;46.382;11.132;870;client;45
+Seehotel Ambach;46.3777;11.2685;216;client;210
+Hotel Thalhof am See;46.388;11.253;216;client;150
+Das Wanda;46.414;11.248;425;client;125
+Hotel Masatsch;46.412;11.249;440;client;100
+Gartenhotel Moser;46.427;11.282;500;client;240
+Hotel Weingarten;46.455;11.26;415;client;140
+Angerburg Blumenhotel;46.455;11.26;420;client;110
+Hotel Sigmundskron;46.4876;11.2848;250;client;120
+Four Points by Sheraton Bolzano;46.4638;11.3269;260;client;320
+Parkhotel Laurin;46.5009;11.3548;262;client;260
+Hotel Greif;46.4991;11.3558;262;client;180
+Stadt Hotel Cittˆ;46.4987;11.3542;262;client;170
+Hotel Magdalener Hof;46.5048;11.3744;260;client;150
+Hotel Therme Meran;46.6686;11.1628;325;client;360
+Palace Merano;46.672;11.167;330;client;430
+Hotel Bavaria Merano;46.671;11.169;330;client;160
+Castel Rundegg;46.6705;11.1779;350;client;180
+Hotel Pienzenau am Schlosspark;46.6681;11.1844;360;client;190
+Hotel Ansitz Plantiz;46.6695;11.18;360;client;210
+Hotel Schwarzschmied;46.6129;11.1582;310;client;220
+Hotel Gschwangut;46.61;11.15;310;client;140
+Hotel Tiefenbrunn;46.6119;11.158;310;client;120
+Hotel Patrizia;46.692;11.1619;600;client;260
+Hotel Traubenheim;46.69;11.162;600;client;120
+Preidlhof Luxury DolceVita Resort;46.6506;11.0053;554;client;430
+Lindenhof Pure Luxury & Spa DolceVita Resort;46.653;11.003;554;client;410
+DolceVita Hotel Jagdhof;46.6167;10.8571;639;client;260
+Hotel Paradies;46.6197;10.8647;640;client;230
+Hotel Vier Jahreszeiten;46.63;10.772;720;client;170
+Hotel Goldene Rose Silandro;46.629;10.771;720;client;130
+ADLER Spa Resort Dolomiti;46.5751;11.6727;1236;client;430
+Hotel Gardena Gršdnerhof;46.5752;11.6738;1236;client;360
+Hotel Angelo Engel;46.5741;11.671;1236;client;220
+Hotel Granbaita Dolomites;46.5547;11.7606;1563;client;340
+Hotel Tyrol Selva;46.5549;11.76;1563;client;240
+Hotel Daniel Selva Gardena;46.55705;11.75445;1563;client;120
+Hotel Sassongher;46.5496;11.8746;1568;client;310
+Hotel La Perla Corvara;46.5499;11.8712;1568;client;260
+Hotel Col Alto;46.5515;11.8735;1568;client;280
+Hotel Fanes San Cassiano;46.5719;11.9312;1537;client;320
+Hotel Cristallo La Villa;46.584;11.904;1433;client;240
+Hotel Savoy La Villa;46.5853;11.903;1433;client;140
+Hotel Ancora Predazzo;46.3115;11.5988;1018;client;130
+Hotel Bellamonte;46.314;11.663;1372;client;110
+Sport Hotel Pampeago;46.345;11.541;1757;client;150
+Hotel Cristal Obereggen;46.385;11.529;1550;client;220
+Hotel Lagorai Resort & Spa;46.2905;11.46;1000;client;260
+Hotel La Stua Cavalese;46.2885;11.4595;1000;client;100
+Olympic SPA Hotel Vigo di Fassa;46.421;11.6748;1382;client;230
+Adler Family & Wellness Clubresidence Moena;46.3766;11.6599;1184;client;210
+Lefay Resort & SPA Dolomiti;46.1604;10.7654;770;client;450
+Hotel Chalet del Sogno;46.2306;10.8265;1550;client;260
+Alpen Suite Hotel;46.23;10.823;1550;client;240
+Hotel Spinale;46.2314;10.8277;1550;client;230
+Carlo Magno Hotel Spa Resort;46.246;10.837;1682;client;330
+Bio Hotel Hermitage;46.223;10.834;1520;client;220
+Du Lac et Du Parc Grand Resort;45.883;10.855;70;client;390
+Lido Palace;45.886;10.843;70;client;260
+Grand Hotel Trento;46.07;11.121;194;client;280
+NH Trento;46.0547;11.1196;194;client;250
+FAST EUROSPAR Tione | NEOGY;46.0416933153623;10.7265711397735;565;charge;0
+NEOGY Corso III Novembre;46.000746;10.693037;780;charge;0
+NEOGY Zona Artigianale Polina;45.990814;10.686486;842;charge;0
+Visit Chiese | Neogy;45.9281374137097;10.6354077029251;660;charge;0
+NEOGY Via della Valle;45.9471569999992;10.618136000002;770;charge;0
+Neogy IperPoli;46.348142;10.911705;738;charge;0
+Neogy Maxi Mode Center;46.4402638788077;11.2597254191699;411;charge;0
+Neogy Shell;46.4716336114144;11.3172776007559;250;charge;0
+Neogy Hub Fiera Bolzano;46.4724;11.3254;246;charge;0
+Neogy AdS MeBo Sud;46.563604;11.213293;248;charge;0
+Neogy Hub Merano - Stazione Maia Bassa;46.656359;11.148141;293;charge;0
+Neogy Fast - Strada Statale delle Dolomiti;46.3332998912287;11.3008419042757;497;charge;0
+Neogy Fast - Zona Artigianale San Lugano;46.3250138567067;11.3806338731953;1097;charge;0
+Neogy Zona Produttiva Cardano;46.491894;11.399316;285;charge;0
+NEOGY Via Peter Mayr Stra§e;46.5392625903482;11.4575710012278;1154;charge;0
+NEOGY Seis / Siusi - Alpe di Siusi;46.5405152130875;11.564795356149;1004;charge;0
+Neogy Cabinovia Laurin;46.4314286545827;11.5444019826396;1182;charge;0
+NEOGY Fast Streda Nives;46.5569030000012;11.7587689999993;1563;charge;0
+Neogy MPreis;46.6926;11.892502;1127;charge;0
+NEOGY Via Roma Tonadico;46.1788759031826;11.8315181313922;750;charge;0
+Via Passo Rolle;46.2541321349357;11.8026542918152;1450;charge;0
+Neogy Fast Via Antonio Gazzoletti;45.8941238798299;11.0362687108629;204;charge;0
+NEOGY 100KW Arco;45.918235148296;10.8871344196284;91;charge;0
+Via Giacomo Cis;45.8831360278784;10.8381991979774;70;charge;0
