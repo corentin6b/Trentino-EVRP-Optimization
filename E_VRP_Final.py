@@ -58,7 +58,7 @@ num_nodes = len(node_names)
 
 # --- 2. INTERACTIVE HYPERPARAMETERS (SIDEBAR) ---
 st.sidebar.header("⚙️ Cost Function & Fleet Parameters")
-fixed_cost = st.sidebar.slider("Vehicle Fixed Cost (€/day)", 30, 70, 50)
+fixed_cost = st.sidebar.slider("Vehicle Fixed Cost (€/day)", 50, 200, 120)
 driver_rate = st.sidebar.slider("Driver Hourly Wage (€/h)", 15, 45, 30)
 kwh_cost = st.sidebar.slider("Neogy Fast Charging Cost (€/kWh)", 0.40, 0.90, 0.79)
 max_fleet_size = st.sidebar.slider("Maximum Available Vans in Fleet", 10, 25, 18)
@@ -96,7 +96,6 @@ def build_matrices_with_osrm(data):
             dist_m = osrm_distances[i][j]
             dist_matrix[i][j] = int(dist_m)
             
-            # FIXED: time_matrix now ONLY stores pure OSRM driving duration in minutes
             time_matrix[i][j] = int(osrm_durations[i][j] / 60)
             
             delta_h = n2['alt'] - n1['alt']
@@ -126,7 +125,6 @@ def solve_vrp(max_vehicles):
     manager = pywrapcp.RoutingIndexManager(num_nodes, max_vehicles, hub_index)
     routing = pywrapcp.RoutingModel(manager)
 
-    # Calculate operational cost dynamically
     def cost_callback(from_index, to_index):
         n_from = manager.IndexToNode(from_index)
         n_to = manager.IndexToNode(to_index)
@@ -146,14 +144,21 @@ def solve_vrp(max_vehicles):
     demand_idx = routing.RegisterUnaryTransitCallback(demand_callback)
     routing.AddDimension(demand_idx, 0, int(van_capacity), True, 'Payload')
 
-    # --- 4.2 TIME DIMENSION (STRICT 5-HOUR MATRIX WINDOW) ---
+    # --- 4.2 TIME DIMENSION (CORRIGÉ AVEC BUFFER DE RECHARGE) ---
     def transit_time_callback(from_index, to_index):
         n_from = manager.IndexToNode(from_index)
-        driving_time = int(time_M[n_from][manager.IndexToNode(to_index)])
+        n_to = manager.IndexToNode(to_index)
+        driving_time = int(time_M[n_from][n_to])
         
-        # Add 25-minute stationary handling window when pulling away from clients
+        # Temps de manutention fixe quand on quitte un client (25 min)
         if n_from != hub_index and nodes_data[node_names[n_from]]['type'] == 'client':
-            return driving_time + 25
+            driving_time += 25
+            
+        # ⚡ BUFFER DE SÉCURITÉ : Si la destination est une borne Neogy, 
+        # on provisionne 20 minutes d'overhead logistique dans le budget du solver
+        if nodes_data[node_names[n_to]]['type'] == 'charge':
+            driving_time += 20
+            
         return driving_time
 
     transit_time_idx = routing.RegisterTransitCallback(transit_time_callback)
@@ -161,35 +166,38 @@ def solve_vrp(max_vehicles):
     time_dimension = routing.GetDimensionOrDie('Time')
 
     # --- 4.3 EV BATTERY & PARTIAL SLACK RECOVERY ---
-    def energy_callback(from_index, to_index):
-        return int(energy_M[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)])
-    energy_idx = routing.RegisterTransitCallback(energy_callback)
-    
     battery_max_wh = int(battery_cap_kwh * 1000)
-    routing.AddDimension(energy_idx, 1000000, 1000000, True, 'Battery')
+
+    def energy_callback(from_index, to_index):
+        n_from = manager.IndexToNode(from_index)
+        n_to = manager.IndexToNode(to_index)
+        
+        if n_to != hub_index and nodes_data[node_names[n_to]]['type'] == 'charge':
+            return int(energy_M[n_from][n_to] - battery_max_wh)
+        return int(energy_M[n_from][n_to])
+        
+    energy_idx = routing.RegisterTransitCallback(energy_callback)
+    routing.AddDimension(energy_idx, battery_max_wh, battery_max_wh, True, 'Battery')
     battery_dimension = routing.GetDimensionOrDie('Battery')
 
-    # --- 4.4 NODE CONTRAINTS GRAPH ---
+    # --- 4.4 NODE CONSTRAINTS GRAPH ---
     for i in range(num_nodes):
-        if i == hub_index: continue
         index = manager.NodeToIndex(i)
         node_type = nodes_data[node_names[i]]['type']
         
+        battery_dimension.SlackVar(index).SetRange(0, battery_max_wh)
+        
+        if i == hub_index: continue
+        
         if node_type == 'charge':
             routing.AddDisjunction([index], 0)
-            battery_dimension.SlackVar(index).SetRange(0, battery_max_wh)
-            routing.AddVariableMinimizedByFinalizer(battery_dimension.SlackVar(index))
-            
-            # FIXED: Add dynamic wait time directly to the time tracker variable
-            # Neogy Fast 50kW average: 1 Wh = 0.0012 minutes charging time
             time_dimension.SlackVar(index).SetRange(0, 300) 
             routing.AddVariableMinimizedByFinalizer(time_dimension.SlackVar(index))
         else:
             routing.AddDisjunction([index], 1000000)
             battery_dimension.CumulVar(index).SetMax(battery_max_wh)
-            battery_dimension.SlackVar(index).SetRange(0, 0)
 
-    # --- 4.5 HEURISTICS RUNTIME ---
+    # --- 4.5 HEURISTICS RUNTIME & RESOLUTION ---
     search_params = pywrapcp.DefaultRoutingSearchParameters()
     search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
@@ -209,24 +217,30 @@ def solve_vrp(max_vehicles):
     st.sidebar.info(f"Status: {status_mapping.get(routing.status(), 'Unknown')}")
     
     routes = {}
+    recharges = {}
+    
     if solution:
         for v in range(max_vehicles):
             index = routing.Start(v)
             routes[v] = []
+            recharges[v] = {}
             while not routing.IsEnd(index):
                 node_idx = manager.IndexToNode(index)
                 routes[v].append(node_idx)
                 index = solution.Value(routing.NextVar(index))
             routes[v].append(manager.IndexToNode(index))
-    return routes
+            
+    return routes, recharges, manager, solution, battery_dimension, routing
 
-routes_dict = solve_vrp(max_fleet_size)
+# Execution globale et blocage de la mémoire C++
+routes_dict, recharges_dict, manager, solution, battery_dimension, routing = solve_vrp(max_fleet_size)
 
 # --- 5. POST-PROCESSING STATISTICAL ANALYSIS ---
 if routes_dict:
     total_dist_m = 0
     total_time_min = 0
-    total_energy_wh = 0
+    total_energy_driving_wh = 0
+    total_energy_charged_wh = 0
     total_linen_delivered = 0
     active_vans_count = 0
     unique_clients_visited = set()
@@ -234,21 +248,36 @@ if routes_dict:
     for v_id, path in routes_dict.items():
         if len(path) <= 2: continue
         active_vans_count += 1
+
         for index in range(len(path)-1):
             u, v_node = path[index], path[index+1]
             total_dist_m += dist_M[u][v_node]
             
-            # Incorporate physical handling overhead time back into dashboard display sums
             service = 25 if nodes_data[node_names[u]]['type'] == 'client' else 0
-            total_time_min += time_M[u][v_node] + service
+            
+            charge_time = 0
+            if nodes_data[node_names[v_node]]['type'] == 'charge':
+                idx_u = manager.NodeToIndex(u)
+                idx_v = manager.NodeToIndex(v_node)
+                defect_before = solution.Value(battery_dimension.CumulVar(idx_u))
+                defect_after = solution.Value(battery_dimension.CumulVar(idx_v))
+                
+                wh_charged = defect_before + energy_M[u][v_node] - defect_after
+                wh_charged = max(0, wh_charged)
+                
+                total_energy_charged_wh += wh_charged
+                charge_time = wh_charged * 0.0012  
+                recharges_dict[v_id][v_node] = wh_charged 
+
+            total_time_min += time_M[u][v_node] + service + charge_time
             
             if nodes_data[node_names[u]]['type'] == 'client':
                 unique_clients_visited.add(node_names[u])
                 total_linen_delivered += nodes_data[node_names[u]]['demand']
-            total_energy_wh += energy_M[u][v_node]
+            total_energy_driving_wh += energy_M[u][v_node]
 
     driver_total_cost = (total_time_min / 60.0) * driver_rate
-    energy_total_cost = (total_energy_wh / 1000.0) * kwh_cost
+    energy_total_cost = (total_energy_driving_wh / 1000.0) * kwh_cost
     fleet_fixed_cost = active_vans_count * fixed_cost
     grand_total_cost = driver_total_cost + energy_total_cost + fleet_fixed_cost
     
@@ -278,10 +307,11 @@ if routes_dict:
         st.write(", ".join(list(missing_clients)))
 
     with st.expander("🔍 Financial & Analytical Breakdown"):
-        c_an1, c_an2, c_an3 = st.columns(3)
+        c_an1, c_an2, c_an3, c_an4 = st.columns(4)
         c_an1.metric("🧑‍✈️ Driver Wages", f"{driver_total_cost:.2f} €", f"{total_time_min/60:.1f} Total Hours")
-        c_an2.metric("🔌 Charging Cost", f"{energy_total_cost:.2f} €", f"{total_energy_wh/1000:.1f} kWh Consumed")
+        c_an2.metric("🔌 Charging Cost", f"{energy_total_cost:.2f} €", f"{total_energy_driving_wh/1000:.1f} kWh Consumed")
         c_an3.metric("🏢 Fleet Depreciation", f"{fleet_fixed_cost:.2f} €", f"{fixed_cost} €/van/day")
+        c_an4.metric("🔋 Smart Recharges", f"{total_energy_charged_wh / 1000:.1f} kWh", "Partial Injections")
         st.info(f"🛣️ **Cumulative Fleet Distance Across Trentino Road Network:** {total_dist_m / 1000:.1f} km")
 
     col1, col2 = st.columns([2, 3])
@@ -298,13 +328,23 @@ if routes_dict:
             v_steps = []
             
             for index in range(len(path)-1):
-                u, v_node = path[index], path[index+1] # FIXED: Cleaner relative node lookups
+                u, v_node = path[index], path[index+1]
                 v_dist += dist_M[u][v_node]
                 
                 service = 25 if nodes_data[node_names[u]]['type'] == 'client' else 0
-                v_time += time_M[u][v_node] + service
+                
+                charge_time = 0
+                u_name = node_names[u]
+                if nodes_data[u_name]['type'] == 'charge':
+                    wh_charged = recharges_dict[v_id].get(u, 0)
+                    charge_time = wh_charged * 0.0012
+                    if wh_charged > 10:  
+                        u_name += f" 🔌 (+{wh_charged/1000:.1f} kWh)"
+                
+                v_time += time_M[u][v_node] + service + charge_time
                 v_energy += energy_M[u][v_node]
-                v_steps.append(node_names[u])
+                v_steps.append(u_name)
+                
             v_steps.append(node_names[path[-1]])
             
             st.markdown(f"### 📦 Opel Vivaro-e #{van_index}")
@@ -312,7 +352,7 @@ if routes_dict:
             
             sm1, sm2, sm3 = st.columns(3)
             sm1.markdown(f"📏 **{v_dist/1000:.1f} km**")
-            sm2.markdown(f"⏱️ **{v_time/60:.1f} hrs** (incl. service)")
+            sm2.markdown(f"⏱️ **{v_time/60:.1f} hrs** (incl. variables)")
             sm3.markdown(f"🔋 **{v_energy/1000:.1f} kWh**")
             st.markdown("---")
 
